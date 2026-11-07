@@ -48,11 +48,27 @@ function addForm(id) {
   </form>`;
 }
 
+// おおよその距離と時間を「約15km・約30分」のように（入っていなければ空）
+function tripText(p) {
+  const parts = [];
+  if (p.distance) parts.push(`約${p.distance}km`);
+  if (p.minutes) {
+    const m = Number(p.minutes);
+    parts.push(m >= 60 && Number.isInteger(m) ? `約${Math.floor(m / 60)}時間${m % 60 ? (m % 60) + '分' : ''}` : `約${p.minutes}分`);
+  }
+  return parts.join('・');
+}
+function tripLine(p) {
+  const t = tripText(p);
+  return t ? `<span class="row-trip">${esc(t)}</span>` : '';
+}
+
 // 「行きたい」の1行
 function wantRow(p) {
   return `<li class="row">
     <a class="row-body" href="#/place/${p.id}">
       <span class="row-title">${esc(p.name)}</span>
+      ${tripLine(p)}
       ${p.research ? `<span class="row-sub">${esc(p.research.split('\n')[0])}</span>` : ''}
     </a>
     <button type="button" class="btn went-btn" data-act="went" data-id="${p.id}">行った！</button>
@@ -68,6 +84,7 @@ function wentRow(p) {
       ${thumb ? `<img class="thumb" data-photo="${thumb}" alt="">` : '<span class="thumb empty">🚗</span>'}
       <span class="row-text">
         <span class="row-title">${esc(p.name)}</span>
+        ${tripLine(p)}
         <span class="row-sub">${p.visits.length}回　${last ? '最後に行った日：' + fmtDate(last) : ''}</span>
       </span>
     </a>
@@ -166,6 +183,15 @@ function renderPlace(id) {
            </div>
            <button type="button" class="link-btn" data-act="back-to-want" data-id="${p.id}">間違えて押したので「行きたい」に戻す</button>`
         : `<button type="button" class="btn primary big wide" data-act="went" data-id="${p.id}">行った！</button>`}
+    </section>
+
+    <section class="card">
+      <h2>距離と時間（おおよそ）</h2>
+      <div class="trip-inputs">
+        <label>距離<span class="unit-input"><input type="text" inputmode="decimal" data-field="distance" data-id="${p.id}" value="${esc(p.distance)}" placeholder="15" autocomplete="off"><span>km</span></span></label>
+        <label>時間<span class="unit-input"><input type="text" inputmode="numeric" data-field="minutes" data-id="${p.id}" value="${esc(p.minutes)}" placeholder="30" autocomplete="off"><span>分</span></span></label>
+      </div>
+      <p class="hint-in">一覧に「約15km・約30分」のように出ます。</p>
     </section>
 
     ${went ? `
@@ -384,6 +410,11 @@ document.addEventListener('input', e => {
     if (field === 'name') {
       value = value.trim();
       if (!value) return; // 名前を空にはしない
+    }
+    if (field === 'distance' || field === 'minutes') {
+      // 全角の数字（１５）を半角（15）にして、数字と小数点以外は取りのぞく
+      value = value.replace(/[０-９．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
+        .replace(/[^0-9.]/g, '');
     }
     await Store.update(id, { [field]: value });
     showSaved();

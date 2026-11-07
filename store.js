@@ -81,6 +81,8 @@ const Store = (() => {
       name: p.name || '（名前なし）',
       status: p.status === 'went' ? 'went' : 'want',
       research: p.research || '',        // 下調べメモ
+      distance: p.distance || '',        // おおよその距離（km・手入力）
+      minutes: p.minutes || '',          // おおよその時間（分・手入力）
       visits: Array.isArray(p.visits) ? p.visits.slice() : [],  // 行った日（'2026-11-07' の形）
       wentAdded: p.wentAdded || null,    // 「行った！」で自動で入れた日（「行きたいに戻す」で消すため）
       routePhotos: Array.isArray(p.routePhotos) ? p.routePhotos.slice() : [],   // ルートのスクショ
@@ -129,8 +131,10 @@ const Store = (() => {
     const i = places.findIndex(p => p.id === id);
     if (i < 0) throw new Error('not found');
     const next = normalize({ ...places[i], ...changes, id, updatedAt: new Date().toISOString() });
-    await putOne('places', next);
+    // 先に手元のデータを書きかえてから保存する。
+    // （2つの保存が同時に走っても、あとの保存が前の書きかえを消さないように）
     places[i] = next;
+    await putOne('places', next);
     return copy(next);
   }
 

@@ -141,6 +141,14 @@ textarea { resize: none; min-height: 90px; line-height: 1.6; }
 .row-text { display: flex; flex-direction: column; min-width: 0; }
 .row-title { font-size: 19px; font-weight: bold; word-break: break-all; }
 .row-sub { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-trip { font-size: 15px; color: var(--green-dark); font-weight: bold; }
+
+/* 距離と時間の入力 */
+.trip-inputs { display: flex; gap: 12px; }
+.trip-inputs label { flex: 1; font-size: 15px; color: var(--muted); }
+.unit-input { display: flex; align-items: center; gap: 6px; margin-top: 4px; color: var(--text); font-size: 18px; }
+.unit-input input { flex: 1; min-width: 0; text-align: right; }
+
 .went-btn { flex: none; min-height: 48px; background: var(--orange); border-color: var(--orange); color: #fff; padding: 8px 14px; }
 .thumb { width: 60px; height: 60px; flex: none; border-radius: 10px; object-fit: cover; background: var(--green-soft); }
 .thumb.empty { display: flex; align-items: center; justify-content: center; font-size: 26px; }
