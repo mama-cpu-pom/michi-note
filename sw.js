@@ -2,7 +2,7 @@
 // ネットにつながるときは最新のファイルを取りに行き、つながらないときは保存しておいたものを使う。
 // ファイルを増やしたときは CACHE の番号を上げる。
 
-const CACHE = 'michinote2-v2';
+const CACHE = 'michinote2-v3';
 const FILES = [
   './',
   './index.html',

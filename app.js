@@ -58,6 +58,15 @@ function tripText(p) {
   }
   return parts.join('・');
 }
+// 保存は「全部で何分」の1つの数。入力欄には「●時間」「●分」に分けて出す
+function tripHours(p) {
+  const m = Number(p.minutes);
+  return p.minutes && m >= 60 ? Math.floor(m / 60) : '';
+}
+function tripMins(p) {
+  const m = Number(p.minutes);
+  return p.minutes && m % 60 ? m % 60 : '';
+}
 function tripLine(p) {
   const t = tripText(p);
   return t ? `<span class="row-trip">${esc(t)}</span>` : '';
@@ -189,9 +198,14 @@ function renderPlace(id) {
       <h2>距離と時間（おおよそ）</h2>
       <div class="trip-inputs">
         <label>距離<span class="unit-input"><input type="text" inputmode="decimal" data-field="distance" data-id="${p.id}" value="${esc(p.distance)}" placeholder="15" autocomplete="off"><span>km</span></span></label>
-        <label>時間<span class="unit-input"><input type="text" inputmode="numeric" data-field="minutes" data-id="${p.id}" value="${esc(p.minutes)}" placeholder="30" autocomplete="off"><span>分</span></span></label>
       </div>
-      <p class="hint-in">一覧に「約15km・約30分」のように出ます。</p>
+      <div class="trip-inputs">
+        <label>時間<span class="unit-input">
+          <input type="text" inputmode="numeric" data-field="tripH" data-id="${p.id}" value="${tripHours(p)}" placeholder="1" autocomplete="off"><span>時間</span>
+          <input type="text" inputmode="numeric" data-field="tripM" data-id="${p.id}" value="${tripMins(p)}" placeholder="20" autocomplete="off"><span>分</span>
+        </span></label>
+      </div>
+      <p class="hint-in">一覧に「約15km・約1時間20分」のように出ます。1時間未満なら「時間」は空のままでOKです。</p>
     </section>
 
     ${went ? `
@@ -405,6 +419,20 @@ document.addEventListener('input', e => {
   if (el.tagName === 'TEXTAREA') autoGrow(el);
   if (!el.dataset.field || !el.dataset.id || el.type === 'file') return;
   const { id, field } = el.dataset;
+  const toHalf = s => s.replace(/[０-９．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0));
+
+  // 「●時間」「●分」の欄は、2つを合わせて「全部で何分」にして保存する
+  if (field === 'tripH' || field === 'tripM') {
+    scheduleSave(id + ':minutes', async () => {
+      const num = f => toHalf($(`[data-field="${f}"][data-id="${id}"]`)?.value || '').replace(/[^0-9]/g, '');
+      const h = num('tripH'), m = num('tripM');
+      const total = h || m ? String(Number(h || 0) * 60 + Number(m || 0)) : '';
+      await Store.update(id, { minutes: total === '0' ? '' : total });
+      showSaved();
+    });
+    return;
+  }
+
   scheduleSave(id + ':' + field, async () => {
     let value = el.value;
     if (field === 'name') {
@@ -413,8 +441,7 @@ document.addEventListener('input', e => {
     }
     if (field === 'distance' || field === 'minutes') {
       // 全角の数字（１５）を半角（15）にして、数字と小数点以外は取りのぞく
-      value = value.replace(/[０-９．]/g, c => String.fromCharCode(c.charCodeAt(0) - 0xFEE0))
-        .replace(/[^0-9.]/g, '');
+      value = toHalf(value).replace(/[^0-9.]/g, '');
     }
     await Store.update(id, { [field]: value });
     showSaved();
